@@ -41,9 +41,13 @@ public class ChronotypeFunction implements SleepAnalysisFunction {
                 .map(s -> {
                     LocalTime sleepTime = s.getStart().toLocalTime();
                     LocalTime wakeTime = s.getEnd().toLocalTime();
-                    if (sleepTime.isAfter(LocalTime.of(23, 0)) && wakeTime.isAfter(LocalTime.of(9, 0))) {
+                    // OWL: засыпание после 23:00 ИЛИ в 0:00-6:00 (ночное) И пробуждение после 9:00
+                    if ((sleepTime.isAfter(LocalTime.of(23, 0)) || sleepTime.isBefore(LocalTime.of(6, 0)))
+                            && wakeTime.isAfter(LocalTime.of(9, 0))) {
                         return Chronotype.OWL;
-                    } else if (sleepTime.isBefore(LocalTime.of(22, 0)) && wakeTime.isBefore(LocalTime.of(7, 0))) {
+                    }
+                    // LARK: засыпание до 22:00 И пробуждение до 7:00
+                    else if (sleepTime.isBefore(LocalTime.of(22, 0)) && wakeTime.isBefore(LocalTime.of(7, 0))) {
                         return Chronotype.LARK;
                     } else {
                         return Chronotype.DOVE;

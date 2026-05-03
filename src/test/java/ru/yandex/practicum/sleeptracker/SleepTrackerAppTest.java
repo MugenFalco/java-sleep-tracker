@@ -257,6 +257,19 @@ public class SleepTrackerAppTest {
     }
 
     @Test
+    void chronotypeOwlNightSession() {
+        ChronotypeFunction f = new ChronotypeFunction();
+        List<SleepingSession> sessions = List.of(
+                new SleepingSession(
+                        LocalDateTime.of(2025, 10, 2, 1, 0),   // засыпание в 01:00
+                        LocalDateTime.of(2025, 10, 2, 10, 0),  // пробуждение в 10:00
+                        SleepQuality.GOOD
+                )
+        );
+        assertEquals(Chronotype.OWL, f.analyze(sessions).getValue());
+    }
+
+    @Test
     void chronotypeLark() {
         ChronotypeFunction f = new ChronotypeFunction();
         // 21:30 засыпание, 6:30 пробуждение
