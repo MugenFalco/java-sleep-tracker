@@ -4,14 +4,15 @@ import java.time.Duration;
 import java.util.List;
 
 public class MinDurationFunction implements SleepAnalysisFunction {
-    private static final String DESCRIPTION = "Минимальная продолжительность (в минутах)";
-
     @Override
     public SleepAnalysisResult analyze(List<SleepingSession> sessions) {
+        if (sessions.isEmpty()) {
+            return new SleepAnalysisResult("Минимальная продолжительность (в минутах)", 0L);
+        }
         long min = sessions.stream()
                 .mapToLong(s -> Duration.between(s.getStart(), s.getEnd()).toMinutes())
                 .min()
                 .orElse(0L);
-        return new SleepAnalysisResult(DESCRIPTION, min);
+        return new SleepAnalysisResult("Минимальная продолжительность (в минутах)", min);
     }
 }

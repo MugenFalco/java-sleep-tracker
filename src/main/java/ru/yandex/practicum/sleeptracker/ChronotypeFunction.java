@@ -16,50 +16,37 @@ public class ChronotypeFunction implements SleepAnalysisFunction {
             return new SleepAnalysisResult("Хронотип", Chronotype.DOVE);
         }
 
-        List<SleepingSession> nightSessions = sessions.stream()
-                .filter(s -> {
-                    LocalDate startDate = s.getStart().toLocalDate();
-                    LocalDate endDate = s.getEnd().toLocalDate();
-                    if (!startDate.equals(endDate)) {
-                        return true;
-                    }
-                    return s.getStart().toLocalTime().isBefore(LocalTime.of(6, 0))
-                            && s.getEnd().toLocalTime().isAfter(LocalTime.MIDNIGHT);
-                })
-                .toList();
+        List<SleepingSession> nightSessions = sessions.stream().filter(s -> {
+            LocalDate startDate = s.getStart().toLocalDate();
+            LocalDate endDate = s.getEnd().toLocalDate();
+            if (!startDate.equals(endDate)) {
+                return true;
+            }
+            return s.getStart().toLocalTime().isBefore(LocalTime.of(6, 0)) && s.getEnd().toLocalTime().isAfter(LocalTime.MIDNIGHT);
+        }).toList();
 
-        Map<LocalDate, SleepingSession> mainSessionByNight = nightSessions.stream()
-                .collect(Collectors.toMap(s -> {
-                    if (s.getStart().toLocalDate().isBefore(s.getEnd().toLocalDate())) {
-                        return s.getEnd().toLocalDate();
-                    } else {
-                        return s.getStart().toLocalDate();
-                    }
-                }, Function.identity(), BinaryOperator.minBy(Comparator.comparing(SleepingSession::getStart))));
+        Map<LocalDate, SleepingSession> mainSessionByNight = nightSessions.stream().collect(Collectors.toMap(s -> {
+            if (s.getStart().toLocalDate().isBefore(s.getEnd().toLocalDate())) {
+                return s.getEnd().toLocalDate();
+            } else {
+                return s.getStart().toLocalDate();
+            }
+        }, Function.identity(), BinaryOperator.minBy(Comparator.comparing(SleepingSession::getStart))));
 
-        Map<Chronotype, Long> typeCounts = mainSessionByNight.values().stream()
-                .map(s -> {
-                    LocalTime sleepTime = s.getStart().toLocalTime();
-                    LocalTime wakeTime = s.getEnd().toLocalTime();
-                    // OWL: засыпание после 23:00 ИЛИ в 0:00-6:00 (ночное) И пробуждение после 9:00
-                    if ((sleepTime.isAfter(LocalTime.of(23, 0)) || sleepTime.isBefore(LocalTime.of(6, 0)))
-                            && wakeTime.isAfter(LocalTime.of(9, 0))) {
-                        return Chronotype.OWL;
-                    }
-                    // LARK: засыпание до 22:00 И пробуждение до 7:00
-                    else if (sleepTime.isBefore(LocalTime.of(22, 0)) && wakeTime.isBefore(LocalTime.of(7, 0))) {
-                        return Chronotype.LARK;
-                    } else {
-                        return Chronotype.DOVE;
-                    }
-                })
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+        Map<Chronotype, Long> typeCounts = mainSessionByNight.values().stream().map(s -> {
+            LocalTime sleepTime = s.getStart().toLocalTime();
+            LocalTime wakeTime = s.getEnd().toLocalTime();
+            if ((sleepTime.isAfter(LocalTime.of(23, 0)) || sleepTime.isBefore(LocalTime.of(6, 0))) && wakeTime.isAfter(LocalTime.of(9, 0))) {
+                return Chronotype.OWL;
+            } else if (sleepTime.isBefore(LocalTime.of(22, 0)) && wakeTime.isBefore(LocalTime.of(7, 0))) {
+                return Chronotype.LARK;
+            } else {
+                return Chronotype.DOVE;
+            }
+        }).collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
-        Chronotype resultType = typeCounts.entrySet().stream()
-                .max(Map.Entry.<Chronotype, Long>comparingByValue()
-                        .thenComparing(Map.Entry.comparingByKey(Comparator.reverseOrder()))) // не важно, при равенстве выберем DOVE ниже
-                .map(Map.Entry::getKey)
-                .orElse(Chronotype.DOVE);
+        Chronotype resultType = typeCounts.entrySet().stream().max(Map.Entry.<Chronotype, Long>comparingByValue().thenComparing(Map.Entry.comparingByKey(Comparator.reverseOrder()))) // не важно, при равенстве выберем DOVE ниже
+                .map(Map.Entry::getKey).orElse(Chronotype.DOVE);
 
         long maxCount = typeCounts.values().stream().mapToLong(Long::longValue).max().orElse(0);
         long maxTypesCount = typeCounts.values().stream().filter(v -> v == maxCount).count();
